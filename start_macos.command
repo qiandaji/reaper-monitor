@@ -22,5 +22,8 @@ fi
 if [ -z "$RMP_HTTP_HOST" ]; then RMP_HTTP_HOST=0.0.0.0; fi
 if [ -z "$RMP_HTTP_PORT" ]; then RMP_HTTP_PORT=61390; fi
 
-echo "[reaper-monitor] 启动：http://$(ipconfig getifaddr en0 2>/dev/null || echo 本机IP):$RMP_HTTP_PORT"
+LAN_IPS=$(ifconfig | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | tr '\n' ' ')
+if [ -z "$LAN_IPS" ]; then LAN_IPS="本机IP"; fi
+
+echo "[reaper-monitor] 启动：http://$LAN_IPS:$RMP_HTTP_PORT"
 exec .venv/bin/uvicorn app.main:app --host "$RMP_HTTP_HOST" --port "$RMP_HTTP_PORT"

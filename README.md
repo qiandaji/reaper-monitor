@@ -88,6 +88,20 @@ REAPER 菜单 **Preferences → Control/OSC/web → Add → OSC (Open Sound Cont
 > 端口必须与服务的 `.env` 一致。控制面选好后建议重启一次 REAPER 让它加载
 > 新的 pattern 文件。
 
+## 可选：在 REAPER 标题栏显示本机 IP
+
+外出排练想快速知道本机 IP 时，可以让 REAPER 标题栏一直显示局域网 IP：
+
+1. 确认已安装 **JS_ReaScriptAPI** 扩展（ReaPack 里搜 `js_ReaScriptAPI`）与 **SWS**。
+2. 把仓库 `scripts/reaper-monitor_ip_title.lua` 复制到 REAPER 资源目录的 `Scripts/`
+   文件夹（macOS：`~/Library/Application Support/REAPER/Scripts/`）。
+3. REAPER 里 Actions → **Show action list** → 搜 `reaper-monitor_ip_title` 运行一次：
+   ReaScript 控制台会打印 IP，主窗口标题栏会追加 `｜ 本机IP: x.x.x.x`。
+4. 想开机自动常驻：搜 **SWS: Set global startup action**，把它设为全局启动动作。
+   不想常驻时再执行一次 **SWS: Clear global startup action** 即可。
+
+> 标题栏每 2 秒刷新一次；切换 WiFi 后 IP 会自动跟着变。
+
 ## 第三步：在 REAPER 里建立监听母线
 
 每位乐手一条轨道（示例：鼓手监听）：
@@ -118,13 +132,23 @@ REAPER 菜单 **Preferences → Control/OSC/web → Add → OSC (Open Sound Cont
 ## 第五步：乐手用手机监听
 
 1. 手机连**同一 WiFi**。
-2. 浏览器打开 `http://<这台电脑IP>:61390`（电脑 IP 见启动脚本提示，或
+2. 浏览器打开 `http://<这台电脑IP>:61390`（电脑 IP 见启动脚本提示、REAPER 标题栏，或
    macOS 用 `ipconfig getifaddr en0` 查看）。
 3. 页面自动列出 REAPER 里实际建立的监听母线（每 3 秒刷新，工程打开后自动出现）。
 4. 乐手点自己的母线进入混音页，调节：
    - **总音量 / 总静音** → 控制他的监听母线；
    - **每个源轨的响度 / 静音** → 控制源轨到他母线的 send 音量。
 5. 所有操作实时写回 REAPER。
+
+## 安卓手机：独立 App（推荐，延迟更低）
+
+安卓系统的浏览器音频输出缓冲天生比 iOS 大（约 40–100ms），网页无法调小；推荐安卓乐手用配套原生 App，走系统低延迟音频通道（AudioTrack `PERFORMANCE_MODE_LOW_LATENCY`），和 iPhone 网页版一样跟手。**测试请用有线耳机**（蓝牙耳机延迟 100–300ms，任何软件都救不了）。
+
+- 工程目录：`../reaper-monitor-android/`（与本项目同级），Android Studio 直接打开即可。
+- 现成 APK：`reaper-monitor-android/app/build/outputs/apk/debug/app-debug.apk`，传到手机侧载安装。
+- 构建与侧载步骤、使用说明见 `reaper-monitor-android/README.md`。
+- App 与网页连的是**同一个服务**（`http://<电脑IP>:61390`），REAPER 配置完全不变，只换手机端。
+- iOS 乐手继续用浏览器即可，无需 App。
 
 ## 动态发现规则（重要约定）
 
@@ -141,6 +165,10 @@ REAPER 菜单 **Preferences → Control/OSC/web → Add → OSC (Open Sound Cont
 - REAPER 音频设备块大小设 **128 采样**（立体声上限；64 更小但很多设备/驱动会爆音失真，实测 128 最稳）。
 - 手机与电脑走 **5GHz WiFi**，路由器离排练位近；**避免蓝牙耳机**（A2DP 延迟大）。
 - ReaStream 是"发多少收多少"，不重传；WiFi 信号差会表现为爆音/断续。
+- **安卓设备延迟比 iPhone 大**：这是安卓浏览器的输出缓冲上限，网页无法调小；
+  安卓乐手请用**独立安卓 App**（见"安卓 App"章节）达到接近 iPhone 的延迟。
+- 安卓务必用**有线耳机或外放**测：蓝牙耳机（A2DP）额外加 100–300ms，是最常见的"明显延迟"来源。
+- 部分安卓手机默认开音效增强（杜比/均衡器/环绕），系统设置里关掉再测，通常能再省一些。
 - 若手机浏览器无声音：点一下页面任意位置（移动端音频需用户手势解锁）。
 - 老 iOS Safari 无 AudioWorklet，页面会自动回退 ScriptProcessor，延迟会再高约 20ms，属设备能力上限。
 
@@ -154,6 +182,7 @@ REAPER 菜单 **Preferences → Control/OSC/web → Add → OSC (Open Sound Cont
 | 推子动、REAPER 没反应 | OSC 端口：REAPER Listen port 是否 = 9212、Device IP/port 是否 = 127.0.0.1:9213（与 .env 一致）？ |
 | `/api/health` 的 `gateway.listening` 为 false | 9213 被占用，或 REAPER 未启动（反馈未建立不影响 listening，true 才正常） |
 | 音频断续/爆音 | 块大小 ≤128？改用 5GHz WiFi？手机离路由器近一点？ |
+| 安卓明显比 iPhone 延迟大 | 换有线耳机；关系统音效增强；使用独立安卓 App（网页方案受浏览器输出缓冲上限限制） |
 
 ## 配置（data/config.json）
 
